@@ -1,12 +1,13 @@
 /**************************************************************
-* Class:  CSC-415-0# - Summer 2023
-* Names: 
-* Student IDs:
-* GitHub Name:
-* Group Name:
+* Class:  CSC-415-03 Fall 2023
+* Names: Edmund Huang, Jimmy Pan, Juan Estrada, Kripa Pokhrel
+* Student IDs: 918426293, 920950183, 923058731, 922961998
+* 
+* GitHub Name: EdmUUUndo
+* 
+* Group Name: HumanOS
+* 
 * Project: Basic File System
-*
-* File: fsShell.c
 *
 * Description: Main driver for file system assignment.
 *
