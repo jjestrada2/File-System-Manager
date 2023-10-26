@@ -36,3 +36,18 @@ int initFreeSpace(uint64_t numberOfBlocks, uint64_t blockSize) {
     }
     return 1;
 }
+
+int allocateBlocks(FreeSpaceManager* fsm, uint64_t blockNumber, uint64_t count) {
+
+    for (uint64_t i = 0; i < count; i++) {
+        uint64_t position = blockNumber - FREE_BLOCKS_OFFSET + i;
+        uint64_t byteIndex = position / 8;
+        uint8_t bitMask = 1 << (position % 8);
+
+        fsm->bitmap[byteIndex] |= bitMask;
+    }
+
+    return 1;
+}
+
+

@@ -2,18 +2,6 @@
 * Class:  CSC-415-03 Fall 2023
 * Names: Edmund Huang, Jimmy Pan, Juan Estrada, Kripa Pokhrel
 * Student IDs: 918426293, 920950183, 923058731, 922961998
-<<<<<<< HEAD
-* 
-* GitHub Name: EdmUUUndo
-* 
-* Group Name: HumanOS
-* 
-* Project: Basic File System
-*
-* Description: 
-*
-* 
-=======
 * GitHub Name: EdmUUUndo
 * Group Name: HumanOS
 * Project: Basic File System
@@ -21,7 +9,6 @@
 * File: fsVcb.h
 *
 * Description: VCB structure and functions
->>>>>>> 98eac11 (VCB done)
 *
 **************************************************************/
 // check if header already defined in scope

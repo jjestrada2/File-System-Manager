@@ -23,4 +23,6 @@ typedef struct {
     size_t count;
 } FreeSpaceManager;
 
+
+
 int initFreeSpace();
