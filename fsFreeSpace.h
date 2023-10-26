@@ -6,11 +6,17 @@
 * Group Name:
 * Project: Basic File System
 *
-* File: 
+* File: fsFreeSpace.h
 *
 * Description: 
 *
 **************************************************************/
-int initFreeSpace(){
-    return 1;
-}
+
+#include <stdint.h>
+
+typedef struct {
+    uint8_t* bitmap;
+    size_t count;
+} FreeSpaceManager;
+
+int initFreeSpace();

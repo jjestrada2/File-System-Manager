@@ -42,7 +42,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		exitFileSystem();
 	}
 
-	if(initFreeSpace()){
+	if(initFreeSpace(numberOfBlocks, blockSize)){
 		printf("Error Writing the Free Space Management");
 		//error handeling
 		exitFileSystem();
