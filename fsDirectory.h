@@ -46,7 +46,7 @@ typedef struct DirectoryEntry
 
 } directoryEntry;
 
-// A directory is just an array of directory entries.
+// A directory is an array of directory entries.
 typedef struct Directory
 {
 	directoryEntry Directory[MAXENTRIES];

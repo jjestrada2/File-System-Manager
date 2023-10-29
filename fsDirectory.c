@@ -52,11 +52,23 @@ struct DirectoryEntry *createDirEntry(char *name, int size, unsigned int inUse)
     return thisEntry;
 }
 
+void initRootDirectoryEntry(struct DirectoryEntry *entry)
+{
+    strcpy(entry->fileName, "/");
+    entry->location = 0;
+    entry->creationTime = time(NULL);
+    entry->modificationTime = time(NULL);
+    entry->lastAccessTime = time(NULL);
+    entry->isDirectory = 1; // This is a directory
+    entry->inUse = 1;       // It is in use
+}
+
 struct Directory *createDirectory(struct DirectoryEntry *entry, struct Directory *parent)
 {
     // New directories should always have the size of the parent
     struct Directory *newDir = malloc(sizeof(Directory));
 
+    // Creating the "." and ".." directories
     newDir->Directory[0] = *entry; // Entry for "."
     newDir->Directory[1] = *entry; // Entry for ".."
 
@@ -68,15 +80,4 @@ struct Directory *createDirectory(struct DirectoryEntry *entry, struct Directory
     newDir->Directory[1].location = (parent != NULL) ? parent->Directory[0].location : 0;
 
     return newDir;
-}
-
-void initRootDirectoryEntry(struct DirectoryEntry *entry)
-{
-    strcpy(entry -> fileName, "/");
-    entry -> location = 0;
-    entry->creationTime = time(NULL);
-    entry->modificationTime = time(NULL);
-    entry->lastAccessTime = time(NULL);
-    entry->isDirectory = 1; // This is a directory
-    entry -> inUse = 1; // It is in use
 }
