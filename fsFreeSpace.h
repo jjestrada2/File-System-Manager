@@ -24,6 +24,5 @@ typedef struct {
     size_t count;
 } FreeSpaceManager;
 
-
-
-int initFreeSpace();
+int initFreeSpace(uint64_t numberOfBlocks, uint64_t blockSize);
+int allocateBlocks(FreeSpaceManager* fsm, uint64_t blockNumber, uint64_t count);
