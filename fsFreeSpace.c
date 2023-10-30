@@ -18,7 +18,10 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+
 #include "fsVcb.h"
+#include "fsFreeSpace.h"
 
 #define FREE_BLOCKS_OFFSET 1
 

@@ -16,10 +16,10 @@
 #define _VCB_H
 
 #ifndef uint64_t
-typedef u_int64_t uint64_t;
+typedef u_int64_t u_int64_t;
 #endif
 #ifndef uint32_t
-typedef u_int32_t uint32_t;
+typedef u_int32_t u_int32_t;
 #endif
 
 #ifndef FSMDef

@@ -48,7 +48,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		exitFileSystem();
 	}
 
-	if(initRootDir()){
+	if(initRootDirectoryEntry()){
 		printf("Error Writing the Root Directory");
 		//error hendeling
 		exitFileSystem();

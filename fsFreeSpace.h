@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct FreeSpaceManager{
     uint8_t* bitmap;
     size_t count;
 } FreeSpaceManager;
