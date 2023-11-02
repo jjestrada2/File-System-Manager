@@ -28,6 +28,7 @@
 
 #include "fsLow.h"
 #include "fsVcb.h"
+#include "fsFreeSpace.h"
 
 typedef struct VCB
 {
@@ -39,6 +40,7 @@ typedef struct VCB
     FSM root;              // pointer to root directory (0 index)
     FSM firstFreeSpace;    // free block pointer
     FSM lastFreeSpace;     // last free block pointer
+    FreeSpaceManager fsm;
     // bFCB nextFCB;        // free FCB pointer
     // type of volume (file system)  // need more research to understand implementation
 } VCB;
@@ -75,6 +77,14 @@ int initVcb(uint64_t numberOfBlocks, uint64_t blockSize)
     lastFree = NULL;
     LBAwrite(vcb, 1, 0);
     return 0;
+}
+
+int setFreeSpaceManager(FreeSpaceManager* fsm) {
+    memcpy(&(vcb->fsm), fsm, sizeof(FreeSpaceManager));
+}
+
+FreeSpaceManager* getFreeSpacemanager() {
+    return &(vcb->fsm);
 }
 
 int writeVcb(){

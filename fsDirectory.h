@@ -13,49 +13,45 @@
  *
  * Description: Basic File System - Key File I/O Operations
  **************************************************************/
-
 #include <stdio.h>
 #include <time.h>
-#include <stdbool.h>
 
 #ifndef FILENAME_MAX_LENGTH
 #define FILENAME_MAX_LENGTH 255
 #endif
 
 #ifndef MAXENTRIES
-#define MAXENTRIES 512 //*TO BE CHANGED* I want to define MAXENTRIES by how much free space there is on the volume.
+#define MAXENTRIES 100
 #endif
 
-typedef struct FSMetaData
+// For use to manage blocks of of the fsDirectoryEntry
+typedef struct fsMgmt
 {
-	// Properties not neccessarily needed for directoryEntry to keep track of.
-	char owner[30]; // owner of the directory entry
 	int currentBlock;
 	int nextBlock;
-	
+}fsMgmt ;
 
-} FSMetaData;
-
-typedef struct directoryEntry
+typedef struct DirectoryEntry
 {
 	// Properties for each directoryEntry to keep track of
-	char filename[FILENAME_MAX_LENGTH + 1]; //+1 for null terminator
+	fsMgmt dirBlockInfo;
+	char fileName[FILENAME_MAX_LENGTH + 1]; //+1 for null terminator
 	int location;							// location of the directory entry within the file system
 	time_t creationTime;
 	time_t modificationTime;
 	time_t lastAccessTime;
-	long size;		  // size of file on disk
-	bool isDirectory; // TRUE for YES, FALSE for NO
-	
+	long size;		 // Size of file on disk
+	unsigned int isDirectory; // 1 is directory, 0 is NOT directory
+	unsigned int inUse; // 1 is in use, 0 is NOT in use
 
 } directoryEntry;
 
-typedef struct directoryArray
+// A directory is an array of directory entries.
+typedef struct Directory
 {
-	directoryEntry directoryArray[MAXENTRIES];
+	directoryEntry Directory[MAXENTRIES];
 
-}directoryArray;
+} Directory;
 
-directoryEntry createEntry(char * name, int size, bool isDirectory);
+int initializeRootDirectory();
 
-int initRootDir();

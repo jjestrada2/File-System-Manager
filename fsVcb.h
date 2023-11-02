@@ -2,20 +2,13 @@
 * Class:  CSC-415-03 Fall 2023
 * Names: Edmund Huang, Jimmy Pan, Juan Estrada, Kripa Pokhrel
 * Student IDs: 918426293, 920950183, 923058731, 922961998
-* 
 * GitHub Name: EdmUUUndo
-* 
 * Group Name: HumanOS
-* 
 * Project: Basic File System
 *
 * File: fsVcb.h
 *
-*Description: These file contains the function prototypes for various operations 
-*related to the Volume Control Block (VCB) and Free Space Management (FSM). 
-*They include functions for initialization, reading/writing the VCB, 
-*obtaining information about free blocks, setting the root directory 
-*location, and releasing resources associated with the VCB.
+* Description: VCB structure and functions
 *
 **************************************************************/
 // check if header already defined in scope
@@ -23,10 +16,10 @@
 #define _VCB_H
 
 #ifndef uint64_t
-typedef u_int64_t uint64_t;
+typedef u_int64_t u_int64_t;
 #endif
 #ifndef uint32_t
-typedef u_int32_t uint32_t;
+typedef u_int32_t u_int32_t;
 #endif
 
 #ifndef FSMDef

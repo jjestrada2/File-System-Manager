@@ -14,13 +14,15 @@
 * Description: 
 *
 * Description: Basic File System - Key File Free Space Operations
+*
 **************************************************************/
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct FreeSpaceManager{
     uint8_t* bitmap;
     size_t count;
 } FreeSpaceManager;
 
-int initFreeSpace();
+int initFreeSpace(uint64_t numberOfBlocks, uint64_t blockSize);
+int allocateBlocks(FreeSpaceManager* fsm, uint64_t blockNumber, uint64_t count);
