@@ -1,4 +1,4 @@
-/*
+/**************************************************************
 * Class:  CSC-415-03 Fall 2023
 * Names: Edmund Huang, Jimmy Pan, Juan Estrada, Kripa Pokhrel
 * Student IDs: 918426293, 920950183, 923058731, 922961998
@@ -8,7 +8,18 @@
 * Group Name: HumanOS
 * 
 * Project: Basic File System
-*/
+*
+* File: fsVcb.c
+*
+* Description: his fsVcb.c file serves as an implementation of
+* various operations related to the Volume Control Block (VCB) 
+* and Free Space Management (FSM) in a basic file system. It manages
+* the initialization, reading/writing to disk, and manipulation 
+* of the VCB and free space information. The file promotes 
+* modularity by encapsulating related functionalities in 
+* functions and structures.
+*
+**************************************************************/
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
