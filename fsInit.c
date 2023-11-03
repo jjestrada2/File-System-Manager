@@ -35,26 +35,17 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 	printf ("\n!-----------!Breakpoint Milestone 1 Starts Here!-----------!\n\n");
 	
+	if (initVolumeCB(numberOfBlocks, blockSize) || initFreeSpace() || initRootDirectory())
+	{
+		// error handling
+		exitFileSystem();
+	} else {
+		writeToVolumeCB();
+	}
 	
-	if(initVcb(numberOfBlocks, blockSize)){
-		printf("Error Writing the Volume Control Block");
-		//error handeling
-		exitFileSystem();
-	}
+	return 0;
 
-	if(initFreeSpace(numberOfBlocks, blockSize)){
-		printf("Error Writing the Free Space Management");
-		//error handeling
-		exitFileSystem();
-	}
 
-	if(initRootDirectoryEntry()){
-		printf("Error Writing the Root Directory");
-		//error hendeling
-		exitFileSystem();
-	}
-
-	printf("\nTest writeVcb() number of block wrote:%d\n",writeVcb());
 	printf("\ngetTotalBlock:%d\n",getTotalBlockCount());
 
 	printf ("\n!-----------!Breakpoint Milestone 1 Ends Here!-----------!\n\n");
@@ -67,5 +58,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	
 void exitFileSystem ()
 	{
-	printf ("System exiting\n");
+	printf("System exiting\n");
+	freeDirs();
+	freeVCB();
 	}

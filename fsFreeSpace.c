@@ -15,52 +15,241 @@
 *
 **************************************************************/
 
-#include <stdio.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
+#include "fsLow.h"
 #include "fsVcb.h"
 #include "fsFreeSpace.h"
 
-#define FREE_BLOCKS_OFFSET 1
+// converts size in bytes to size in blocks using int math
+int getBlockSizeFromBytes(int bytes);
+// creates a byte buffer of blocks size and updates VCB memory
+FreeSpaceManager *getFreeBlocks(int blocks);
 
-int startup = 0;
+// TODO: Make safer for small block sizes
+int initFreeSpace()
+{
+    int blockCount = getFreeBlockCount();
+    if (blockCount == FREESPACEUNINTIALIZEDFLAG)
+    {
+        blockCount = getTotalBlockCount() - FREESPACESTARTOFFSET;
+        printf("Initializing free space HUMAN OS...\n");
 
-int initFreeSpace(uint64_t numberOfBlocks, uint64_t blockSize) {
-    if (!startup) {
-        FreeSpaceManager* fsm = (FreeSpaceManager*) malloc(sizeof(FreeSpaceManager));        
-        if (fsm == NULL) {
-            return 1; // allocation failed
+        char *fsm = malloc(getBlockSize());
+        ((FreeSpaceManager *)fsm)->currentBlock = FREESPACESTARTOFFSET;
+        ((FreeSpaceManager *)fsm)->nextBlock = LASTBLOCK;
+        ((FreeSpaceManager *)fsm)->size = blockCount;
+
+        LBAwrite(fsm, 1, FREESPACESTARTOFFSET);
+        setFirstFree((FreeSpaceManager *)fsm);
+        setLastFree((FreeSpaceManager *)fsm);
+        free(fsm);
+        setFreeBlockCount(blockCount);
+        printf("Finished initializing the HUMAN OS free space...\n");
+    }
+    return 0;
+}
+
+int getBytesCountAvailabe()
+{
+    return getFreeBlockCount() * getBlockSize();
+}
+
+int fsFree(FreeSpaceManager *firstBlock, FreeSpaceManager *lastBlock, int fileSize)
+{
+    FreeSpaceManager *lastFree = getLastFree();
+    /*********************************/
+    if (lastFree->currentBlock != LASTBLOCK)
+    {
+        char *writeBlock = malloc(getBlockSize());
+        memcpy(writeBlock, lastFree, sizeof(FreeSpaceManager));
+        ((FreeSpaceManager *)writeBlock)->nextBlock = firstBlock->currentBlock;
+        LBAwrite(writeBlock, 1, ((FreeSpaceManager *)writeBlock)->currentBlock);
+    }
+    /********************************/
+    setLastFree(lastBlock);
+    setFreeBlockCount(getFreeBlockCount() + fileSize);
+    return 0;
+}
+
+FreeSpaceManager *getAvailableBytes(int bytes)
+{
+    int requestedBlocks = getBlockSizeFromBytes(bytes);
+    if (getFreeBlockCount() < requestedBlocks)
+    {
+        return NULL;
+    }
+    return getFreeBlocks(requestedBlocks);
+}
+
+int defragmentFreeSpace()
+{
+    printf("Reached unimplemented function defragmentFreeSpace. Infinite loop imminent. Exiting before crash.");
+    exit(-1);
+    // return 0;
+}
+
+FreeSpaceManager *copyFreeSpaceManager(FreeSpaceManager *oldFSM)
+{
+    FreeSpaceManager *retObject = NULL;
+    if (oldFSM != NULL)
+    {
+        retObject = malloc(sizeof(FreeSpaceManager));
+        memcpy(retObject, oldFSM, sizeof(FreeSpaceManager));
+    }
+    return retObject;
+}
+
+int getBlockSizeFromBytes(int bytes)
+{
+    return (bytes + getBlockSize() - 1) / getBlockSize();
+}
+
+FreeSpaceManager *getFreeBlocks(int blocks)
+{
+    // pointer to first free space info from vcb
+    FreeSpaceManager *head = getFirstFree();
+
+    // pointer to return new allocated block(s) info
+    FreeSpaceManager *ret = malloc(sizeof(FreeSpaceManager));
+    // ret->currentBlock;
+    ret->nextBlock = LASTBLOCK;
+    ret->size = blocks;
+
+    int changeLastBlockFlag = 0;
+    if (getFirstFree() == getLastFree())
+    {
+        changeLastBlockFlag = 1;
+    }
+
+    // size < blocks
+    if (head->size < blocks)
+    {
+        // find new block that works
+        char *blockIterator = malloc(getBlockSize());
+        memcpy(blockIterator, head, sizeof(FreeSpaceManager));
+
+        char *blockBefore = malloc(getBlockSize());
+
+        while (((FreeSpaceManager *)blockIterator)->size < blocks && ((FreeSpaceManager *)blockIterator)->nextBlock != LASTBLOCK)
+        {
+            memcpy(blockBefore, blockIterator, sizeof(FreeSpaceManager));
+            LBAread(blockIterator, 1, ((FreeSpaceManager *)blockIterator)->nextBlock);
         }
 
-        size_t bmSize = numberOfBlocks - FREE_BLOCKS_OFFSET;
+       
+        if (((FreeSpaceManager *)blockIterator)->size < blocks)
+        {
+            defragmentFreeSpace();
+            return getFreeBlocks(blocks);
+        }
+
+        if (((FreeSpaceManager *)blockIterator)->size == blocks)
+        {
+            ((FreeSpaceManager *)blockBefore)->nextBlock = ((FreeSpaceManager *)blockIterator)->nextBlock;
+        }
+        else
+        {
+            ((FreeSpaceManager *)blockBefore)->nextBlock = ((FreeSpaceManager *)blockIterator)->currentBlock + ((FreeSpaceManager *)blockIterator)->size;
+        }
+        LBAwrite(blockBefore, 1, ((FreeSpaceManager *)blockBefore)->currentBlock);
+        free(blockBefore);
+        blockBefore = NULL;
+
+       
+        if (((FreeSpaceManager *)blockIterator)->size > blocks)
+        {
+            char *blockAfter = malloc(getBlockSize());
+            ((FreeSpaceManager *)blockAfter)->currentBlock = ((FreeSpaceManager *)blockIterator)->currentBlock + ((FreeSpaceManager *)blockIterator)->size;
+            ((FreeSpaceManager *)blockAfter)->nextBlock = ((FreeSpaceManager *)blockIterator)->nextBlock;
+            ((FreeSpaceManager *)blockAfter)->size = ((FreeSpaceManager *)blockIterator)->size - blocks;
+            LBAwrite(blockAfter, 1, ((FreeSpaceManager *)blockAfter)->currentBlock);
+            free(blockAfter);
+            blockAfter = NULL;
+        }
+
+      
+        ret->currentBlock = ((FreeSpaceManager *)blockIterator)->currentBlock;
+        LBAwrite(blockIterator, 1, ((FreeSpaceManager *)blockIterator)->currentBlock);
+        free(blockIterator);
+        blockIterator = NULL;
+
         
-        fsm->bitmap = (uint8_t*) malloc(bmSize);
-        if (fsm->bitmap == NULL) {
-            return 1; //allocation failed
+    }
+    else if (head->size > blocks)
+    {
+        ret->currentBlock = head->currentBlock;
+
+       
+        char *blockAfter = malloc(getBlockSize());
+        ((FreeSpaceManager *)blockAfter)->currentBlock = head->currentBlock + blocks;
+        ((FreeSpaceManager *)blockAfter)->nextBlock = head->nextBlock;
+        ((FreeSpaceManager *)blockAfter)->size = head->size - blocks;
+        LBAwrite(blockAfter, 1, ((FreeSpaceManager *)blockAfter)->currentBlock);
+
+        
+        setFirstFree((FreeSpaceManager *)blockAfter);
+        if (changeLastBlockFlag)
+        {
+            setLastFree((FreeSpaceManager *)blockAfter);
         }
+        free(blockAfter);
+        blockAfter = NULL;
 
-        fsm->count = bmSize;
+        
+        char *currentBlock = malloc(getBlockSize());
+        memcpy(currentBlock, ret, sizeof(FreeSpaceManager));
+        LBAwrite(currentBlock, 1, ((FreeSpaceManager *)currentBlock)->currentBlock);
+        free(currentBlock);
+        currentBlock = NULL;
 
-        setFreeSpaceManager(fsm);
-        startup = 1;
+        
     }
-    return 0;
-}
+    else
+    {
+        ret->currentBlock = head->currentBlock;
 
-int allocateBlocks(FreeSpaceManager* fsm, uint64_t blockNumber, uint64_t count) {
-    for (uint64_t i = 0; i < count; i++) {
-        uint64_t position = blockNumber - FREE_BLOCKS_OFFSET + i;
-        uint64_t byteIndex = position / 8;
-        uint8_t bitMask = 1 << (position % 8);
+     
+        if (head->nextBlock != LASTBLOCK)
+        {
+            char *currentBlock = malloc(getBlockSize());
+            memcpy(currentBlock, ret, sizeof(FreeSpaceManager));
+            LBAwrite(currentBlock, 1, ((FreeSpaceManager *)currentBlock)->currentBlock);
+            free(currentBlock);
+            currentBlock = NULL;
 
-        fsm->bitmap[byteIndex] |= bitMask;
+            
+            char *nextBlock = malloc(getBlockSize());
+            LBAread(nextBlock, 1, head->nextBlock);
+            setFirstFree((FreeSpaceManager *)nextBlock);
+            if (changeLastBlockFlag)
+            {
+                setLastFree((FreeSpaceManager *)nextBlock);
+            }
+            free(nextBlock);
+            nextBlock = NULL;
+        }
+        else
+        {
+            FreeSpaceManager *noBlock = malloc(sizeof(FreeSpaceManager));
+            noBlock->currentBlock = LASTBLOCK;
+            noBlock->nextBlock = LASTBLOCK;
+            noBlock->size = 0;
+
+            setFirstFree(noBlock);
+            if (changeLastBlockFlag)
+            {
+                setLastFree(noBlock);
+            }
+            free(noBlock);
+            noBlock = NULL;
+        }
     }
 
-    return 0;
+    
+    setFreeBlockCount(getFreeBlockCount() - blocks);
+
+    return ret;
 }
-
-
-
-
