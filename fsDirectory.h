@@ -27,11 +27,11 @@ typedef u_int32_t uint32_t;
 
 #ifndef FSMDef
 #define FSMDef
-typedef struct FSM {
+typedef struct FreeSpaceManager {
     int currentBlock;
     int nextBlock;
     int size;
-} FSM;
+} FreeSpaceManager;
 #endif
 
 #ifndef DIRMAX_LEN

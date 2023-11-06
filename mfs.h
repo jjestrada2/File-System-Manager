@@ -19,7 +19,8 @@
 #include <time.h>
 
 #include "b_io.h"
-#include <fsDirectory.h>
+#include "fsDirectory.h"
+#include "fsFreeSpace.h"
 
 #include <dirent.h>
 #define FT_REGFILE	DT_REG

@@ -120,3 +120,41 @@ Directory *parsePath(const char *path, char *nameBuffer) {
     free(arguments);
     return tempDir;
 }
+
+/**
+ * Retrieves the DirEntry associated with the given path.
+ */
+DirEntry *getEntryFromPath(const char *path) {
+    // Buffer to store the last component of the path
+    char *nameBuffer = malloc(sizeof(char) * NAMESIZE);
+
+    // Get the parent Directory using the parsePath function
+    Directory *parent = parsePath(path, nameBuffer);
+
+    // If parsePath fails, free resources and return NULL
+    if (parent == NULL) {
+        free(nameBuffer);
+        return NULL;
+    }
+
+    // Search for the DirEntry in the parent Directory
+    DirEntry *retObject = searchDirectory(parent, nameBuffer);
+
+    // Free the nameBuffer as it's no longer needed
+    free(nameBuffer);
+
+    // If the DirEntry is not found, free resources and return NULL
+    if (retObject == NULL) {
+        freeDirectoryPtr(parent);
+        return NULL;
+    }
+
+    // Copy the DirEntry to a new object
+    retObject = copyDirEntry(retObject);
+
+    // Free the parent Directory as it's no longer needed
+    freeDirectoryPtr(parent);
+
+    // Return the DirEntry pointer
+    return retObject;
+}

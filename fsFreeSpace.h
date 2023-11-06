@@ -53,8 +53,7 @@ int fsFree(FreeSpaceManager* firstBlock, FreeSpaceManager* lastBlock, int fileSi
 // Return NULL if the requested bytes are too large
 FreeSpaceManager* getAvailableBytes(int bytes);
 
-// Rearrange written blocks to create more space
-int defragmentFreeSpace();
+
 
 // Create a copy of the FreeSpaceManager structure
 FreeSpaceManager* copyFreeSpaceManager(FreeSpaceManager* oldFSM);
