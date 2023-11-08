@@ -46,7 +46,7 @@ DirEntry *initDirEntryArrayBlock(DirEntry *dirEntryArray)
 
 DirEntry *createDEntry(char *name, int size, unsigned char isDir)
 {
-    printf("-------------------------Directory  Entry Initialization HUMAN OS-------------------------\n");
+    printf("-------------------------Directory Entry Initialization HUMAN OS-------------------------\n");
     DirEntry *retDirEnt = malloc(sizeof(DirEntry));
     FreeSpaceManager *dirEntFSM = getAvailableBytes(size);///////////////////////////////////////**************
     memcpy(retDirEnt, dirEntFSM, sizeof(FreeSpaceManager));
