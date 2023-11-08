@@ -28,25 +28,42 @@ int fs_mkdir(const char *pathname, mode_t mode){
 }
 
 int fs_isDir(const char *pathname){
-   //Initialize the return value
-   int isDirectory = 0;
+    // Initialize the return value to indicate it's not a directory
+    int isDirectory = 0;
 
-    //Get directory entry
-    DirEntry * entry = get
+    // Get the directory entry from the given path
+    DirEntry *entry = getEntryFromPath(path);
 
+    // Check if the entry exists and is a directory
+    if (entry != NULL && entry->isDir == 1) {
+        // Set the return value to indicate it's a directory
+        isDirectory = 1;
+    }
 
+    // Free the allocated memory for the directory entry
+    free(entry);
+
+    // Return the result
+    return isDirectory;
 }
 
-int fs_isFile(const char *pathname){
-    //Ensure input is not empty and follows format 
-    //traverse path to check components exists
-    //Once reach directory check tipe 
-    /
-}
+int fs_isFile(char *path) {
+    // Initialize the return value to 0 (not a file)
+    int retValue = 0;
 
+    // Get the DirEntry associated with the path
+    DirEntry *entry = getEntryFromPath(path);
 
-Directory *parsePath(const *path, char *nameBuffer){
-    
+    // Check if the DirEntry is not NULL and represents a file (not a directory)
+    if (entry != NULL && entry->isDir == 0) {
+        retValue = 1;  // Set return value to 1 (file found)
+    }
+
+    // Free the DirEntry as it's no longer needed
+    free(entry);
+
+    // Return the determined value (1 if file, 0 otherwise)
+    return retValue;
 }
 
 
