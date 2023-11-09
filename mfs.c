@@ -104,6 +104,63 @@ Directory *fs_opendir(const char *pathname)
     return openedDir;
 }
 
+char * fs_getcwd(char *pathname, size_t size){
+    char *cwd = getcwd(pathname, size);
+    return cwd;
+
+}
+
+int fs_setcwd(char *pathname) {
+    // Parse the path and get the parent directory
+    char nameBuffer[NAMESIZE];
+    Directory *parent = parsePath(pathname, nameBuffer);
+
+    // Check if parsing the path failed
+    if (parent == NULL)
+    {
+        printf("Invalid path\n");
+        return -1;
+    }
+
+    // Find the directory entry in the parent directory
+    DirEntry *dirEntry = searchDirectory(parent, nameBuffer);
+
+    // Check if the directory entry doesn't exist
+    if (dirEntry == NULL)
+    {
+        // Generate an absolute path
+        char absolutePath[MAX_PATH_LENGTH];
+        snprintf(absolutePath, sizeof(absolutePath), "%s/%s", getCWDPath(), pathname);
+
+        // Try to parse the absolute path
+        Directory *absPathDir = parsePath(absolutePath, nameBuffer);
+
+        // Check if parsing the absolute path failed
+        if (absPathDir == NULL)
+        {
+            printf("Directory does not exist: %s\n", pathname);
+            freeDirectoryPtr(parent);
+            return -1;
+        }
+
+        // Set the new current working directory
+        int result = setCWD(absPathDir);
+
+        // Free allocated resources
+        freeDirectoryPtr(parent);
+        freeDirectoryPtr(absPathDir);
+
+        return result;
+    }
+
+    // Set the new current working directory
+    int result = setCWD(readDirEntry(dirEntry));
+
+    // Free allocated resources
+    freeDirectoryPtr(parent);
+
+    return result;
+}
 
 /**
  * Parses the given path and returns the corresponding Directory.
