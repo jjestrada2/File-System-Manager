@@ -15,6 +15,31 @@
  **************************************************************/
 #include "mfs.h"
 
+// For: fs_delete()
+int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove)
+{
+    if (dir == NULL || entryToRemove == NULL)
+    {
+        return -1; // Invalid arguments.
+    }
+    // Traverse the directory entries to find and remove the entry
+    for (int i = 0; i < dir->numEntries; i++)
+    {
+        if (dir->entries[i] == entryToRemove)
+        {
+            // Shift the remaining entries to fill the gap
+            for (int j = i; j < dir->numEntries - 1; j++)
+            {
+                dir->entries[j] = dir->entries[j + 1];
+            }
+            dir->numEntries--;
+            // Optionally, update the directory's metadata such as size.
+            return 0; // Entry removed successfully.
+        }
+    }
+    return -1; // Entry not found in the directory.
+}
+
 int fs_mkdir(const char *pathname, mode_t mode)
 {
     // Ensure input parameter are valid, name is not empty and follows conventions
@@ -71,7 +96,8 @@ int fs_isFile(char *path)
 Directory *fs_opendir(const char *pathname)
 {
     // Check if the given pathname is a directory
-    if (!fs_isDir(pathname)) {
+    if (!fs_isDir(pathname))
+    {
         return NULL; // The specified path is not a directory.
     }
 
@@ -82,9 +108,59 @@ Directory *fs_opendir(const char *pathname)
     Directory *parent = parsePath(pathname, nameBuffer);
 
     // If parsePath fails or the parent is not a directory, return NULL
-    if (parent == NULL) {
+    if (parent == NULL)
+    {
         return NULL;
     }
+}
+
+int fs_closedir(fdDir *dirp)
+{
+    // Check if dirp is NULL
+    if (dirp == NULL)
+    {
+        return -1; // Invalid argument.
+    }
+    // Free the dirp structure itself.
+    free(dirp);
+    return 0; // Success.
+}
+
+int fs_delete(char *filename)
+{
+    // Check if the file exists
+    if (!fs_isFile(filename))
+    {
+        return -1; // The specified file does not exist.
+    }
+    // Buffer to store the last component of the path
+    char nameBuffer[NAMESIZE];
+    // Get the parent Directory using the parsePath function
+    Directory *parent = parsePath(filename, nameBuffer);
+    // If parsePath fails or the parent is not a directory, return an error
+    if (parent == NULL)
+    {
+        return -1;
+    }
+    // Search for the DirEntry in the parent Directory
+    DirEntry *fileEntry = searchDirectory(parent, nameBuffer);
+    // Check if the DirEntry is not found or is a directory, return an error
+    if (fileEntry == NULL || fileEntry->isDir == 1)
+    {
+        freeDirectoryPtr(parent);
+        return -1; // Cannot delete a directory using fs_delete.
+    }
+    // Remove the file entry from the parent directory
+    if (removeEntryFromDirectory(parent, fileEntry) != 0)
+    {
+        freeDirectoryPtr(parent);
+        return -1; // Failed to remove the entry.
+    }
+    // Free the file entry and any associated resources
+    freeDirEntry(fileEntry);
+    // Free the parent directory as it's no longer needed
+    freeDirectoryPtr(parent);
+    return 0; // Success.
 
     // Search for the DirEntry in the parent Directory
     DirEntry *dirEntry = searchDirectory(parent, nameBuffer);
@@ -93,24 +169,26 @@ Directory *fs_opendir(const char *pathname)
     freeDirectoryPtr(parent);
 
     // Check if the DirEntry is not found or is not a directory
-    if (dirEntry == NULL || dirEntry->isDir != 1) {
+    if (dirEntry == NULL || dirEntry->isDir != 1)
+    {
         return NULL; // The specified directory does not exist.
     }
 
     // Open the specified directory and return it
     Directory *openedDir = (Directory *)readDirEntry(dirEntry);
-    
+
     // Return the opened directory
     return openedDir;
 }
 
-char * fs_getcwd(char *pathname, size_t size){
+char *fs_getcwd(char *pathname, size_t size)
+{
     char *cwd = getcwd(pathname, size);
     return cwd;
-
 }
 
-int fs_setcwd(char *pathname) {
+int fs_setcwd(char *pathname)
+{
     // Parse the path and get the parent directory
     char nameBuffer[NAMESIZE];
     Directory *parent = parsePath(pathname, nameBuffer);
