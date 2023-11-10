@@ -13,6 +13,10 @@
  *
  * Description: functions to handle shell commands
  **************************************************************/
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "mfs.h"
 
 // For: fs_delete()
@@ -42,12 +46,27 @@ int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove)
 
 int fs_mkdir(const char *pathname, mode_t mode)
 {
-    // Ensure input parameter are valid, name is not empty and follows conventions
-
-    // Find free blocks getfreeblocks()
-    // Creat Directory Entry ()
-    // Update parent directory
-    // writing to second storage LBAwrite
+    int retValue =0; 
+    char *nameBuffer = malloc(sizeof(char)*NAMESIZE);
+    Directory *parentDir = parsePath(pathname,nameBuffer);
+    if(parentDir == NULL){
+        printf("Path is not valid\n try again!");
+        retValue =-1;
+    }else if(searchDirectory(parentDir,nameBuffer)!= NULL){
+        printf("That name is in use, change it please!");
+        retVal =-1;
+    }
+    else{
+        DirEntry *newEntry = createDEntry(nameBuffer,sizeof(Directory), 1);
+        retValue = assignDEntryToDirectory(newEntry,parentDir);
+        Directory *newDir = createDirectory(newEntry,parentDir);
+        writeDirectory(newDir);
+        writeDirectory(parentDir);
+        free(newEntry);
+    }
+    free(nameBuffer);
+    freeDirectoryPtr(parentDir);
+    return retVal;
 }
 
 int fs_isDir(const char *pathname)
