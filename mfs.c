@@ -259,6 +259,80 @@ int fs_setcwd(char *pathname)
     return result;
 }
 
+struct fs_diriteminfo *fs_readdir(fdDir *dir)
+{
+    if (dir == NULL) {
+        return NULL;
+    }
+    DirEntry *entry = getEntryFromPath(dir->di->d_name);
+    if (getEntryFromPath(dir->di->d_name) == NULL) {
+        printf("Directory does not exist: %s\n", dir->di->d_name);
+        return NULL;
+    }
+    free(entry);
+    if (dir->dirEntryPosition < dir->d_reclen)
+    {
+        return dir->dirItemArray[dir->dirEntryPosition++];
+    }
+    return NULL;
+}
+
+int fs_stat(const char *pathname, struct fs_stat *stat)
+{
+    DirEntry *entry = getEntryFromPath(pathname);
+
+    if (entry == NULL)
+    {
+        printf("Directory does not exist: %s\n", pathname);
+        return 1;
+    }
+
+    stat->st_size = entry->dirEntBlockInfo.size * getSizeofBlocks();
+    stat->st_blksize = entry->dirEntBlockInfo.size;
+    stat->st_blocks = (stat->st_size + 511) / 512;
+    stat->st_accesstime = entry->dateLastAccessed;
+    stat->st_modtime = entry->datelastModified;
+    stat->st_createtime = entry->dateCreated;
+
+    free(entry);
+    return 0;
+}
+
+int fs_rmdir(const char *pathname)
+{
+    char *nameBuffer = malloc(sizeof(char) * NAMESIZE);
+    Directory *folder = parsePath(pathname, nameBuffer);
+    if (folder == NULL)
+    {
+        printf("Path is invalid\n");
+        free(nameBuffer);
+        return -1;
+    }
+    DirEntry *entries = searchDirectory(folder, nameBuffer);
+    free(nameBuffer);
+
+    if (entries == NULL || entries->isDir == 0)
+    {
+        printf("A File with that name does not exist\n");
+        freeDirectoryPtr(folder);
+        return -1;
+    }
+    Directory *oldDirectory = readDirEntry(entries);
+    if (isDirectoryEmpty(oldDirectory) == 0)
+    {
+        printf("Directory is not empty. Cannot delete\n");
+        return -1;
+    }
+
+    deleteDirectory(oldDirectory);
+    unassignDEntry(entries);
+    writeDirectory(folder);
+
+    free(oldDirectory);
+    freeDirectoryPtr(folder);
+    return 0;
+}
+
 /**
  * Parses the given path and returns the corresponding Directory.
  * Also populates the provided nameBuffer with the last component of the path.
