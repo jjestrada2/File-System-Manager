@@ -35,7 +35,7 @@ int initFreeSpace()
     if (blockCount == FREESPACEUNINTIALIZEDFLAG)
     {
         blockCount = getTotalBlockCount() - FREESPACESTARTOFFSET;
-        printf("Initializing free space HUMAN OS...\n");
+        printf("-------------------------Free Space Initializing HUMAN OS-------------------------\n");
 
         char *fsm = malloc(getBlockSize());
         ((FreeSpaceManager *)fsm)->currentBlock = FREESPACESTARTOFFSET;
@@ -47,7 +47,7 @@ int initFreeSpace()
         setLastFree((FreeSpaceManager *)fsm);
         free(fsm);
         setFreeBlockCount(blockCount);
-        printf("Finished initializing the HUMAN OS free space...\n");
+        printf("-------------------------Free Space Initializing Finished HUMAN OS-------------------------\n");
     }
     return 0;
 }
