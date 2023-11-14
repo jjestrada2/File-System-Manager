@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include "mfs.h"
 #include "fsDirectory.h"
-
+/*
 struct fs_diriteminfo *fs_readdir(fdDir *dir)
 {
     if (dir == NULL) {
@@ -37,7 +37,9 @@ struct fs_diriteminfo *fs_readdir(fdDir *dir)
     }
     return NULL;
 }
+*/
 
+/*
 int fs_stat(const char *pathname, struct fs_stat *stat)
 {
     DirEntry *entry = getEntryFromPath(pathname);
@@ -58,7 +60,9 @@ int fs_stat(const char *pathname, struct fs_stat *stat)
     free(entry);
     return 0;
 }
+*/
 
+/*
 int fs_rmdir(const char *pathname)
 {
     char *nameBuffer = malloc(sizeof(char) * NAMESIZE);
@@ -93,7 +97,7 @@ int fs_rmdir(const char *pathname)
     freeDirectoryPtr(folder);
     return 0;
 }
-
+*/
 /**
  * Parses the given path and returns the corresponding Directory.
  * Also populates the provided nameBuffer with the last component of the path.
