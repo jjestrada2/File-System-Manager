@@ -18,246 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "mfs.h"
-
-// For: fs_delete()
-int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove)
-{
-    if (dir == NULL || entryToRemove == NULL)
-    {
-        return -1; // Invalid arguments.
-    }
-    // Traverse the directory entries to find and remove the entry
-    for (int i = 0; i < dir->numEntries; i++)
-    {
-        if (dir->entries[i] == entryToRemove)
-        {
-            // Shift the remaining entries to fill the gap
-            for (int j = i; j < dir->numEntries - 1; j++)
-            {
-                dir->entries[j] = dir->entries[j + 1];
-            }
-            dir->numEntries--;
-            // Optionally, update the directory's metadata such as size.
-            return 0; // Entry removed successfully.
-        }
-    }
-    return -1; // Entry not found in the directory.
-}
-
-int fs_mkdir(const char *pathname, mode_t mode)
-{
-    int retValue =0; 
-    char *nameBuffer = malloc(sizeof(char)*NAMESIZE);
-    Directory *parentDir = parsePath(pathname,nameBuffer);
-    if(parentDir == NULL){
-        printf("Path is not valid\n try again!");
-        retValue =-1;
-    }else if(searchDirectory(parentDir,nameBuffer)!= NULL){
-        printf("That name is in use, change it please!");
-        retVal =-1;
-    }
-    else{
-        DirEntry *newEntry = createDEntry(nameBuffer,sizeof(Directory), 1);
-        retValue = assignDEntryToDirectory(newEntry,parentDir);
-        Directory *newDir = createDirectory(newEntry,parentDir);
-        writeDirectory(newDir);
-        writeDirectory(parentDir);
-        free(newEntry);
-    }
-    free(nameBuffer);
-    freeDirectoryPtr(parentDir);
-    return retVal;
-}
-
-int fs_isDir(const char *pathname)
-{
-    // Initialize the return value to indicate it's not a directory
-    int isDirectory = 0;
-
-    // Get the directory entry from the given path
-    DirEntry *entry = getEntryFromPath(path);
-
-    // Check if the entry exists and is a directory
-    if (entry != NULL && entry->isDir == 1)
-    {
-        // Set the return value to indicate it's a directory
-        isDirectory = 1;
-    }
-
-    // Free the allocated memory for the directory entry
-    free(entry);
-
-    // Return the result
-    return isDirectory;
-}
-
-int fs_isFile(char *path)
-{
-    // Initialize the return value to 0 (not a file)
-    int retValue = 0;
-
-    // Get the DirEntry associated with the path
-    DirEntry *entry = getEntryFromPath(path);
-
-    // Check if the DirEntry is not NULL and represents a file (not a directory)
-    if (entry != NULL && entry->isDir == 0)
-    {
-        retValue = 1; // Set return value to 1 (file found)
-    }
-
-    // Free the DirEntry as it's no longer needed
-    free(entry);
-
-    // Return the determined value (1 if file, 0 otherwise)
-    return retValue;
-}
-
-Directory *fs_opendir(const char *pathname)
-{
-    // Check if the given pathname is a directory
-    if (!fs_isDir(pathname))
-    {
-        return NULL; // The specified path is not a directory.
-    }
-
-    // Buffer to store the last component of the path
-    char nameBuffer[NAMESIZE];
-
-    // Get the parent Directory using the parsePath function
-    Directory *parent = parsePath(pathname, nameBuffer);
-
-    // If parsePath fails or the parent is not a directory, return NULL
-    if (parent == NULL)
-    {
-        return NULL;
-    }
-}
-
-int fs_closedir(fdDir *dirp)
-{
-    // Check if dirp is NULL
-    if (dirp == NULL)
-    {
-        return -1; // Invalid argument.
-    }
-    // Free the dirp structure itself.
-    free(dirp);
-    return 0; // Success.
-}
-
-int fs_delete(char *filename)
-{
-    // Check if the file exists
-    if (!fs_isFile(filename))
-    {
-        return -1; // The specified file does not exist.
-    }
-    // Buffer to store the last component of the path
-    char nameBuffer[NAMESIZE];
-    // Get the parent Directory using the parsePath function
-    Directory *parent = parsePath(filename, nameBuffer);
-    // If parsePath fails or the parent is not a directory, return an error
-    if (parent == NULL)
-    {
-        return -1;
-    }
-    // Search for the DirEntry in the parent Directory
-    DirEntry *fileEntry = searchDirectory(parent, nameBuffer);
-    // Check if the DirEntry is not found or is a directory, return an error
-    if (fileEntry == NULL || fileEntry->isDir == 1)
-    {
-        freeDirectoryPtr(parent);
-        return -1; // Cannot delete a directory using fs_delete.
-    }
-    // Remove the file entry from the parent directory
-    if (removeEntryFromDirectory(parent, fileEntry) != 0)
-    {
-        freeDirectoryPtr(parent);
-        return -1; // Failed to remove the entry.
-    }
-    // Free the file entry and any associated resources
-    freeDirEntry(fileEntry);
-    // Free the parent directory as it's no longer needed
-    freeDirectoryPtr(parent);
-    return 0; // Success.
-
-    // Search for the DirEntry in the parent Directory
-    DirEntry *dirEntry = searchDirectory(parent, nameBuffer);
-
-    // Free the parent Directory as it's no longer needed
-    freeDirectoryPtr(parent);
-
-    // Check if the DirEntry is not found or is not a directory
-    if (dirEntry == NULL || dirEntry->isDir != 1)
-    {
-        return NULL; // The specified directory does not exist.
-    }
-
-    // Open the specified directory and return it
-    Directory *openedDir = (Directory *)readDirEntry(dirEntry);
-
-    // Return the opened directory
-    return openedDir;
-}
-
-char *fs_getcwd(char *pathname, size_t size)
-{
-    char *cwd = getcwd(pathname, size);
-    return cwd;
-}
-
-int fs_setcwd(char *pathname)
-{
-    // Parse the path and get the parent directory
-    char nameBuffer[NAMESIZE];
-    Directory *parent = parsePath(pathname, nameBuffer);
-
-    // Check if parsing the path failed
-    if (parent == NULL)
-    {
-        printf("Invalid path\n");
-        return -1;
-    }
-
-    // Find the directory entry in the parent directory
-    DirEntry *dirEntry = searchDirectory(parent, nameBuffer);
-
-    // Check if the directory entry doesn't exist
-    if (dirEntry == NULL)
-    {
-        // Generate an absolute path
-        char absolutePath[MAX_PATH_LENGTH];
-        snprintf(absolutePath, sizeof(absolutePath), "%s/%s", getCWDPath(), pathname);
-
-        // Try to parse the absolute path
-        Directory *absPathDir = parsePath(absolutePath, nameBuffer);
-
-        // Check if parsing the absolute path failed
-        if (absPathDir == NULL)
-        {
-            printf("Directory does not exist: %s\n", pathname);
-            freeDirectoryPtr(parent);
-            return -1;
-        }
-
-        // Set the new current working directory
-        int result = setCWD(absPathDir);
-
-        // Free allocated resources
-        freeDirectoryPtr(parent);
-        freeDirectoryPtr(absPathDir);
-
-        return result;
-    }
-
-    // Set the new current working directory
-    int result = setCWD(readDirEntry(dirEntry));
-
-    // Free allocated resources
-    freeDirectoryPtr(parent);
-
-    return result;
-}
+#include "fsDirectory.h"
 
 /**
  * Parses the given path and returns the corresponding Directory.
@@ -316,11 +77,11 @@ Directory *parsePath(const char *path, char *nameBuffer)
     for (int i = 1; i < counter; i++)
     {
         tempEntry = searchDirectory(tempDir, arguments[i]);
-        if (tempEntry != NULL && tempEntry->isDir == 1)
+        if (tempEntry != NULL && tempEntry->isDirectory == 1)
         {
             // Update tempDir to the found subdirectory
             oldDir = tempDir;
-            tempDir = (Directory *)readDirEntry(tempEntry);
+            tempDir = (Directory *)readDEntry(tempEntry);
             freeDirectoryPtr(oldDir);
         }
         else
@@ -372,7 +133,7 @@ DirEntry *getEntryFromPath(const char *path)
     }
 
     // Copy the DirEntry to a new object
-    retObject = copyDirEntry(retObject);
+    retObject = copyDEntry(retObject);
 
     // Free the parent Directory as it's no longer needed
     freeDirectoryPtr(parent);
@@ -380,3 +141,247 @@ DirEntry *getEntryFromPath(const char *path)
     // Return the DirEntry pointer
     return retObject;
 }
+/*
+// For: fs_delete()
+int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove)
+{
+    if (dir == NULL || entryToRemove == NULL)
+    {
+        return -1; // Invalid arguments.
+    }
+    // Traverse the directory entries to find and remove the entry
+    for (int i = 0; i < dir->dirArray; i++)
+    {
+        if (dir->entries[i] == entryToRemove)
+        {
+            // Shift the remaining entries to fill the gap
+            for (int j = i; j < dir->numEntries - 1; j++)
+            {
+                dir->entries[j] = dir->entries[j + 1];
+            }
+            dir->numEntries--;
+            // Optionally, update the directory's metadata such as size.
+            return 0; // Entry removed successfully.
+        }
+    }
+    return -1; // Entry not found in the directory.
+} */
+
+int fs_mkdir(const char *pathname, mode_t mode)
+{
+    int retValue =0; 
+    char *nameBuffer = malloc(sizeof(char)*NAMESIZE);
+    Directory *parentDir = parsePath(pathname,nameBuffer);
+    if(parentDir == NULL){
+        printf("Path is not valid\n try again!");
+        retValue =-1;
+    }else if(searchDirectory(parentDir,nameBuffer)!= NULL){
+        printf("That name is in use, change it please!");
+        retValue =-1;
+    }
+    else{
+        DirEntry *newEntry = createDEntry(nameBuffer,sizeof(Directory), 1);
+        retValue = assignDEntryToDirectory(newEntry,parentDir);
+        Directory *newDir = createDirectory(newEntry,parentDir);
+        writeDirectory(newDir);
+        writeDirectory(parentDir);
+        free(newEntry);
+    }
+    free(nameBuffer);
+    freeDirectoryPtr(parentDir);
+    return retValue;
+}
+
+int fs_isDir(char *pathname)
+{
+    // Initialize the return value to indicate it's not a directory
+    int isDirectory = 0;
+
+    // Get the directory entry from the given path
+    DirEntry *entry = getEntryFromPath(pathname);
+
+    // Check if the entry exists and is a directory
+    if (entry != NULL && entry->isDirectory == 1)
+    {
+        // Set the return value to indicate it's a directory
+        isDirectory = 1;
+    }
+
+    // Free the allocated memory for the directory entry
+    free(entry);
+
+    // Return the result
+    return isDirectory;
+}
+
+int fs_isFile(char *path)
+{
+    // Initialize the return value to 0 (not a file)
+    int retValue = 0;
+
+    // Get the DirEntry associated with the path
+    DirEntry *entry = getEntryFromPath(path);
+
+    // Check if the DirEntry is not NULL and represents a file (not a directory)
+    if (entry != NULL && entry->isDirectory == 0)
+    {
+        retValue = 1; // Set return value to 1 (file found)
+    }
+
+    // Free the DirEntry as it's no longer needed
+    free(entry);
+
+    // Return the determined value (1 if file, 0 otherwise)
+    return retValue;
+}
+/*
+Directory *fs_opendir(const char *pathname)
+{
+    // Check if the given pathname is a directory
+    if (!fs_isDir(pathname))
+    {
+        return NULL; // The specified path is not a directory.
+    }
+
+    // Buffer to store the last component of the path
+    char nameBuffer[NAMESIZE];
+
+    // Get the parent Directory using the parsePath function
+    Directory *parent = parsePath(pathname, nameBuffer);
+
+    // If parsePath fails or the parent is not a directory, return NULL
+    if (parent == NULL)
+    {
+        return NULL;
+    }
+}
+*/
+
+int fs_closedir(fdDir *dirp)
+{
+    // Check if dirp is NULL
+    if (dirp == NULL)
+    {
+        return -1; // Invalid argument.
+    }
+    // Free the dirp structure itself.
+    free(dirp);
+    return 0; // Success.
+}
+/*
+int fs_delete(char *filename)
+{
+    // Check if the file exists
+    if (!fs_isFile(filename))
+    {
+        return -1; // The specified file does not exist.
+    }
+    // Buffer to store the last component of the path
+    char nameBuffer[NAMESIZE];
+    // Get the parent Directory using the parsePath function
+    Directory *parent = parsePath(filename, nameBuffer);
+    // If parsePath fails or the parent is not a directory, return an error
+    if (parent == NULL)
+    {
+        return -1;
+    }
+    // Search for the DirEntry in the parent Directory
+    DirEntry *fileEntry = searchDirectory(parent, nameBuffer);
+    // Check if the DirEntry is not found or is a directory, return an error
+    if (fileEntry == NULL || fileEntry->isDirectory == 1)
+    {
+        freeDirectoryPtr(parent);
+        return -1; // Cannot delete a directory using fs_delete.
+    }
+    // Remove the file entry from the parent directory
+    if (removeEntryFromDirectory(parent, fileEntry) != 0)
+    {
+        freeDirectoryPtr(parent);
+        return -1; // Failed to remove the entry.
+    }
+    // Free the file entry and any associated resources
+    freeDEntry(fileEntry);
+    // Free the parent directory as it's no longer needed
+    freeDirectoryPtr(parent);
+    return 0; // Success.
+
+    // Search for the DirEntry in the parent Directory
+    DirEntry *dirEntry = searchDirectory(parent, nameBuffer);
+
+    // Free the parent Directory as it's no longer needed
+    freeDirectoryPtr(parent);
+
+    // Check if the DirEntry is not found or is not a directory
+    if (dirEntry == NULL || dirEntry->isDirectory != 1)
+    {
+        return NULL; // The specified directory does not exist.
+    }
+
+    // Open the specified directory and return it
+    Directory *openedDir = (Directory *)readDirEntry(dirEntry);
+
+    // Return the opened directory
+    return openedDir;
+}*/
+
+char *fs_getcwd(char *pathname, size_t size)
+{
+    char *cwd = getcwd(pathname, size);
+    return cwd;
+}
+
+
+/*
+int fs_setcwd(char *pathname)
+{
+    // Parse the path and get the parent directory
+    char nameBuffer[NAMESIZE];
+    Directory *parent = parsePath(pathname, nameBuffer);
+
+    // Check if parsing the path failed
+    if (parent == NULL)
+    {
+        printf("Invalid path\n");
+        return -1;
+    }
+
+    // Find the directory entry in the parent directory
+    DirEntry *dirEntry = searchDirectory(parent, nameBuffer);
+
+    // Check if the directory entry doesn't exist
+    if (dirEntry == NULL)
+    {
+        // Generate an absolute path
+        char absolutePath[MAX_PATH_LENGTH];
+        snprintf(absolutePath, sizeof(absolutePath), "%s/%s", getCWDPath(), pathname);
+
+        // Try to parse the absolute path
+        Directory *absPathDir = parsePath(absolutePath, nameBuffer);
+
+        // Check if parsing the absolute path failed
+        if (absPathDir == NULL)
+        {
+            printf("Directory does not exist: %s\n", pathname);
+            freeDirectoryPtr(parent);
+            return -1;
+        }
+
+        // Set the new current working directory
+        int result = setCWD(absPathDir);
+
+        // Free allocated resources
+        freeDirectoryPtr(parent);
+        freeDirectoryPtr(absPathDir);
+
+        return result;
+    }
+
+    // Set the new current working directory
+    int result = setCWD(readDirEntry(dirEntry));
+
+    // Free allocated resources
+    freeDirectoryPtr(parent);
+
+    return result;
+}
+*/
