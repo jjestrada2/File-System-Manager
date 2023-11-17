@@ -19,6 +19,7 @@
 #include <time.h>
 
 #include "b_io.h"
+#include "fsDirectory.h"
 
 #include <dirent.h>
 #define FT_REGFILE	DT_REG
@@ -56,11 +57,11 @@ typedef struct
 	} fdDir;
 
 // Key directory functions
-int fs_mkdir(const char *pathname, mode_t mode);
+int fs_mkdir(char *pathname, mode_t mode);
 int fs_rmdir(const char *pathname);
 
 // Directory iteration functions
-fdDir * fs_opendir(const char *pathname);
+fdDir * fs_opendir(char *pathname);
 struct fs_diriteminfo *fs_readdir(fdDir *dirp);
 int fs_closedir(fdDir *dirp);
 
@@ -71,6 +72,11 @@ int fs_isFile(char * filename);	//return 1 if file, 0 otherwise
 int fs_isDir(char * pathname);		//return 1 if directory, 0 otherwise
 int fs_delete(char* filename);	//removes a file
 
+// Misc helper functions
+
+int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove);
+DirEntry *getEntryFromPath(const char *path);
+Directory *parsePath(const char *path, char *nameBuffer);
 
 // This is the strucutre that is filled in from a call to fs_stat
 struct fs_stat

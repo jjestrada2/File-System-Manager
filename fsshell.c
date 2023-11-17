@@ -48,8 +48,13 @@
 #define CMDRM_ON	0
 #define CMDCP2L_ON	0
 #define CMDCP2FS_ON	0
+<<<<<<< HEAD
 #define CMDCD_ON	1
 #define CMDPWD_ON	0
+=======
+#define CMDCD_ON	0
+#define CMDPWD_ON	1
+>>>>>>> refs/remotes/origin/main
 #define CMDTOUCH_ON	0
 #define CMDCAT_ON	0
 
