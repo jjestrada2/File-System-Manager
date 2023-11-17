@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include "mfs.h"
 #include "fsDirectory.h"
+
+#define MAX_PATH_LENGTH 255
 /*
 struct fs_diriteminfo *fs_readdir(fdDir *dir)
 {
@@ -402,7 +404,7 @@ int fs_delete(char *filename)
     }
 }
 
-/*
+
 int fs_setcwd(char *pathname)
 {
     // Parse the path and get the parent directory
@@ -448,11 +450,11 @@ int fs_setcwd(char *pathname)
     }
 
     // Set the new current working directory
-    int result = setCWD(readDirEntry(dirEntry));
+    int result = setCWD(readDEntry(dirEntry));
 
     // Free allocated resources
     freeDirectoryPtr(parent);
 
     return result;
 }
-*/
+
