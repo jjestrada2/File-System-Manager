@@ -439,7 +439,7 @@ int fs_setcwd(char *pathname)
         int result = setCWD(absPathDir);
 
         // Free allocated resources
-        freeDirectoryPtr(parent);
+        //freeDirectoryPtr(parent);
         freeDirectoryPtr(absPathDir);
 
         return result;
