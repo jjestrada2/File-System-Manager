@@ -21,28 +21,26 @@
 #include "fsDirectory.h"
 
 #define MAX_PATH_LENGTH 255
-/*
-struct fs_diriteminfo *fs_readdir(fdDir *dir)
+
+struct fs_diriteminfo *fs_readdir(fdDir *dirp)
 {
-    if (dir == NULL) {
-        return NULL;
-    }
-    DirEntry *entry = getEntryFromPath(dir->di->d_name);
-    if (getEntryFromPath(dir->di->d_name) == NULL) {
-        printf("Directory does not exist: %s\n", dir->di->d_name);
-        return NULL;
-    }
-    free(entry);
-    if (dir->dirEntryPosition < dir->d_reclen)
+    // if (dirp == NULL) {
+    //     return NULL;
+    // }
+    // DirEntry *entry = getEntryFromPath(dirp->di->d_name);
+    // if (getEntryFromPath(dirp->di->d_name) == NULL) {
+    //     printf("Directory does not exist: %s\n", dirp->di->d_name);
+    //     return NULL;
+    // }
+    // free(entry);
+    if (dirp->dirEntryPosition < dirp->d_reclen)
     {
-        return dir->dirItemArray[dir->dirEntryPosition++];
+        return dirp->dirItemArray[dirp->dirEntryPosition++];
     }
     return NULL;
 }
-*/
 
-/*
-int fs_stat(const char *pathname, struct fs_stat *stat)
+int fs_stat(const char *pathname, struct fs_stat *buf)
 {
     DirEntry *entry = getEntryFromPath(pathname);
 
@@ -52,17 +50,16 @@ int fs_stat(const char *pathname, struct fs_stat *stat)
         return 1;
     }
 
-    stat->st_size = entry->dirEntBlockInfo.size * getSizeofBlocks();
-    stat->st_blksize = entry->dirEntBlockInfo.size;
-    stat->st_blocks = (stat->st_size + 511) / 512;
-    stat->st_accesstime = entry->dateLastAccessed;
-    stat->st_modtime = entry->datelastModified;
-    stat->st_createtime = entry->dateCreated;
+    buf->st_size = entry->dirEntBlockInfo.size * getSizeofBlocks();
+    buf->st_blksize = entry->dirEntBlockInfo.size;
+    buf->st_blocks = (buf->st_size + 511) / 512;
+    buf->st_accesstime = entry->lastAccessTime;
+    buf->st_modtime = entry->modificationTime;
+    buf->st_createtime = entry->creationTime;
 
     free(entry);
     return 0;
 }
-*/
 
 /*
 int fs_rmdir(const char *pathname)

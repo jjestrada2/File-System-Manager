@@ -75,7 +75,7 @@ int fs_delete(char* filename);	//removes a file
 // Misc helper functions
 
 int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove);
-
+DirEntry *getEntryFromPath(const char *path);
 
 // This is the strucutre that is filled in from a call to fs_stat
 struct fs_stat
