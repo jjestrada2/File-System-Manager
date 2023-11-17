@@ -58,7 +58,7 @@ typedef struct
 
 // Key directory functions
 int fs_mkdir(char *pathname, mode_t mode);
-int fs_rmdir(char *pathname);
+int fs_rmdir(const char *pathname);
 
 // Directory iteration functions
 fdDir * fs_opendir(char *pathname);
@@ -76,6 +76,7 @@ int fs_delete(char* filename);	//removes a file
 
 int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove);
 DirEntry *getEntryFromPath(const char *path);
+Directory *parsePath(const char *path, char *nameBuffer);
 
 // This is the strucutre that is filled in from a call to fs_stat
 struct fs_stat

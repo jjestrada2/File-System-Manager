@@ -61,7 +61,6 @@ int fs_stat(const char *pathname, struct fs_stat *buf)
     return 0;
 }
 
-/*
 int fs_rmdir(const char *pathname)
 {
     char *nameBuffer = malloc(sizeof(char) * NAMESIZE);
@@ -75,13 +74,13 @@ int fs_rmdir(const char *pathname)
     DirEntry *entries = searchDirectory(folder, nameBuffer);
     free(nameBuffer);
 
-    if (entries == NULL || entries->isDir == 0)
+    if (entries == NULL || entries->isDirectory == 0)
     {
         printf("A File with that name does not exist\n");
         freeDirectoryPtr(folder);
         return -1;
     }
-    Directory *oldDirectory = readDirEntry(entries);
+    Directory *oldDirectory = readDEntry(entries);
     if (isDirectoryEmpty(oldDirectory) == 0)
     {
         printf("Directory is not empty. Cannot delete\n");
@@ -96,7 +95,7 @@ int fs_rmdir(const char *pathname)
     freeDirectoryPtr(folder);
     return 0;
 }
-*/
+
 /**
  * Parses the given path and returns the corresponding Directory.
  * Also populates the provided nameBuffer with the last component of the path.
