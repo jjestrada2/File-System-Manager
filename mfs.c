@@ -409,7 +409,7 @@ char *fs_getcwd(char *pathname, size_t size)
 }
 
 
-/*
+
 int fs_setcwd(char *pathname)
 {
     // Parse the path and get the parent directory
@@ -430,7 +430,7 @@ int fs_setcwd(char *pathname)
     if (dirEntry == NULL)
     {
         // Generate an absolute path
-        char absolutePath[MAX_PATH_LENGTH];
+        char absolutePath[32];
         snprintf(absolutePath, sizeof(absolutePath), "%s/%s", getCWDPath(), pathname);
 
         // Try to parse the absolute path
@@ -455,11 +455,11 @@ int fs_setcwd(char *pathname)
     }
 
     // Set the new current working directory
-    int result = setCWD(readDirEntry(dirEntry));
+    int result = setCWD(readDEntry(dirEntry));
 
     // Free allocated resources
     freeDirectoryPtr(parent);
 
     return result;
 }
-*/
+
