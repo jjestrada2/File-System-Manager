@@ -401,10 +401,6 @@ int fs_delete(char *filename)
 }
 
 
-<<<<<<< HEAD
-
-=======
->>>>>>> refs/remotes/origin/main
 int fs_setcwd(char *pathname)
 {
     // Parse the path and get the parent directory
