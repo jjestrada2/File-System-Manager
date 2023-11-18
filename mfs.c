@@ -403,6 +403,7 @@ int fs_delete(char *filename)
 
 int fs_setcwd(char *pathname)
 {
+    
     // Parse the path and get the parent directory
     char nameBuffer[NAMESIZE];
     Directory *parent = parsePath(pathname, nameBuffer);

@@ -22,13 +22,17 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "b_io.h"
+#include "fsDirectory.h"
+#include "mfs.h"
+
 
 #define MAXFCBS 20
 #define B_CHUNK_SIZE 512
 
 typedef struct b_fcb
 	{
-	/** TODO add al the information you need in the file control block **/
+	FreeSpaceManager *fileInfo;/** TODO add al the information you need in the file control block **/
+	off_t fileOffset; //cuur buffer position
 	char * buf;		//holds the open file buffer
 	int index;		//holds the current position in the buffer
 	int buflen;		//holds how many valid bytes are in the buffer
@@ -37,6 +41,8 @@ typedef struct b_fcb
 b_fcb fcbArray[MAXFCBS];
 
 int startup = 0;	//Indicates that this has not been initialized
+int getBlockOffset(off_t fileOffset);
+int getOffsetWithinBlock(off_t fileOffset);
 
 //Method to initialize our file system
 void b_init ()
@@ -55,7 +61,7 @@ b_io_fd b_getFCB ()
 	{
 	for (int i = 0; i < MAXFCBS; i++)
 		{
-		if (fcbArray[i].buff == NULL)
+		if (fcbArray[i].buf == NULL)
 			{
 			return i;		//Not thread safe (But do not worry about it for this assignment)
 			}
@@ -70,6 +76,9 @@ b_io_fd b_open (char * filename, int flags)
 	{
 	b_io_fd returnFd;
 
+	//parsepath -> directory
+	//
+
 	//*** TODO ***:  Modify to save or set any information needed
 	//
 	//
@@ -78,7 +87,47 @@ b_io_fd b_open (char * filename, int flags)
 	
 	returnFd = b_getFCB();				// get our own file descriptor
 										// check for error - all used FCB's
-	
+	if(returnFd == -1){
+		printf("-----FAILED-TO-OPEN-BUFFER-ALL-FILE-DESCRP-IN-USE------");
+		return -1;
+	}
+
+	char* nameBuffer = malloc(sizeof(char)*NAMESIZE);
+	Directory* parentDir = parsePath(filename,nameBuffer);
+	if(parentDir==NULL){
+		printf("path is invalid");
+		return -1;
+	}
+	DirEntry* entry = searchDirectory(parentDir,nameBuffer);
+	if (entry == NULL){
+		if(flags & O_CREAT){
+			entry = createDEntry(nameBuffer,DEFAULTFILESIZE,0);
+			assignDEntryToDirectory(entry,parentDir);
+			char* buffer = malloc(entry->dirEntBlockInfo.size);
+			memset(buffer,'\0',entry->dirEntBlockInfo.size);
+			writeDEntry(&(entry->dirEntBlockInfo), buffer);
+			writeDirectory(parentDir);
+			free(buffer);
+		}else{
+			printf("-----FAILED-TO-OPEN-BUFFER-%s-IS-INVALID-----",filename);
+			return -1;
+		}
+		
+	}else{
+		entry = copyDEntry(entry);
+	}
+	fcbArray[returnFd].fileInfo = copyDEntryFsm(entry);
+	free(nameBuffer);
+	freeDirectoryPtr(parentDir);
+	free(entry);
+
+	fcbArray[returnFd].buf = (char *) malloc(sizeof(char)*B_CHUNK_SIZE);
+	if(fcbArray[returnFd].buf == NULL){
+		printf("-----FAILED-TO-INITIALIZE-BUFFER----\n");
+		return -1;
+	}
+	fcbArray[returnFd].index = 0;
+	fcbArray[returnFd].buflen = 0;
 	return (returnFd);						// all set
 	}
 
@@ -153,5 +202,22 @@ int b_read (b_io_fd fd, char * buffer, int count)
 // Interface to Close the file	
 int b_close (b_io_fd fd)
 	{
+		if(fcbArray[fd].fileInfo != NULL){
+			free(fcbArray[fd].fileInfo);
+			fcbArray[fd].fileInfo = NULL;
+		}
+
+		if(fcbArray[fd].buf != NULL){
+			free(fcbArray[fd].buf);
+			fcbArray[fd].buf = NULL;
+		}
 
 	}
+
+int getBlockOffset(off_t fileOffset){
+	return fileOffset / getSizeofBlocks();
+}
+
+int getOffsetWithinBlock(off_t fileOffset){
+	return fileOffset % getSizeofBlocks();
+}

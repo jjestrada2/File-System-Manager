@@ -78,6 +78,7 @@ int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove);
 DirEntry *getEntryFromPath(const char *path);
 Directory *parsePath(const char *path, char *nameBuffer);
 
+
 // This is the strucutre that is filled in from a call to fs_stat
 struct fs_stat
 	{
