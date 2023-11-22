@@ -24,6 +24,7 @@
 #include "b_io.h"
 #include "fsDirectory.h"
 #include "mfs.h"
+#include "fsLow.h"
 
 
 #define MAXFCBS 20
@@ -41,8 +42,17 @@ typedef struct b_fcb
 b_fcb fcbArray[MAXFCBS];
 
 int startup = 0;	//Indicates that this has not been initialized
-int getBlockOffset(off_t fileOffset);
-int getOffsetWithinBlock(off_t fileOffset);
+int getBlckPosition(off_t fileOffset);
+int getPositionInsideBlck(off_t fileOffset);
+
+uint64_t wrtPartialDEntry(FreeSpaceManager *dirEntry, void *buffer, int blockOffset, int blockCount)
+{
+    if (blockOffset + blockCount > dirEntry->size)
+    {
+        return -1;
+    }
+    return LBAwrite(buffer, blockCount, dirEntry->currentBlock + blockOffset);
+}
 
 //Method to initialize our file system
 void b_init ()
@@ -88,7 +98,7 @@ b_io_fd b_open (char * filename, int flags)
 	returnFd = b_getFCB();				// get our own file descriptor
 										// check for error - all used FCB's
 	if(returnFd == -1){
-		printf("-----FAILED-TO-OPEN-BUFFER-ALL-FILE-DESCRP-IN-USE------");
+		printf("-----FAILED-TO-OPEN-BUFFER-ALL-FILE-DESCRP-IN-USE------\n");
 		return -1;
 	}
 
@@ -98,7 +108,7 @@ b_io_fd b_open (char * filename, int flags)
 		printf("path is invalid");
 		return -1;
 	}
-	DirEntry* entry = searchDirectory(parentDir,nameBuffer);
+	DirEntry* entry = seekDirectory(parentDir,nameBuffer);
 	if (entry == NULL){
 		if(flags & O_CREAT){
 			//check if file name is already taken
@@ -144,7 +154,7 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		return (-1); 					//invalid file descriptor
 		}
 		
-		if(getBlockOffset(offset + whence) > fcbArray[fd].fileInfo->size){
+		if(getBlckPosition(offset + whence) > fcbArray[fd].fileInfo->size){
 			return -1;
 		}
 		fcbArray[fd].fileOffset = offset + whence;
@@ -169,7 +179,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		return -1;
 	}
 
-	int blocksWritten = writePartialDirectoryEntry(fcbArray[fd].fileInfo, buffer, getBlockOffset(fcbArray[fd].fileOffset),count);
+	int blocksWritten = wrtPartialDEntry(fcbArray[fd].fileInfo, buffer, getBlckPosition(fcbArray[fd].fileOffset),count);
 
 		
 	return blocksWritten; 
@@ -223,7 +233,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		fcbArray[fd].buflen = 0;
 		fileRemaining = fcbArray[fd].fileInfo->size - fcbArray[fd].fileOffset;
 	}
-	int blockOffset = getBlockOffset(fcbArray[fd].fileOffset);
+	int blockOffset = getBlckPosition(fcbArray[fd].fileOffset);
 	int remainingBytes = count -bytesReturned;
 	int remainingFullBlocks = ((fileRemaining > remainingBytes) ? remainingBytes : fileRemaining)/B_CHUNK_SIZE;
 	
@@ -273,10 +283,11 @@ int b_close (b_io_fd fd)
 
 	}
 
-int getBlockOffset(off_t fileOffset){
+int getBlckPosition(off_t fileOffset){
 	return fileOffset / getSizeofBlocks();
 }
 
-int getOffsetWithinBlock(off_t fileOffset){
+int getPositionInsideBlck(off_t fileOffset){
 	return fileOffset % getSizeofBlocks();
 }
+

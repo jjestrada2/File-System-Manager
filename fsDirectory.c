@@ -182,14 +182,7 @@ uint64_t writeDEntry(FreeSpaceManager *dirEntry, void *buffer)
     return LBAwrite(buffer, dirEntry->size, dirEntry->currentBlock);
 }
 
-uint64_t writePartialDirectoryEntry(FreeSpaceManager *dirEntry, void *buffer, int blockOffset, int blockCount)
-{
-    if (blockOffset + blockCount > dirEntry->size)
-    {
-        return -1;
-    }
-    return LBAwrite(buffer, blockCount, dirEntry->currentBlock + blockOffset);
-}
+
 
 uint64_t readPartialDirEntry(FreeSpaceManager *dirEntry, int blockOffset, int blockCount, void *buffer, int bufferIndex)
 {
@@ -209,7 +202,7 @@ void *readDEntry(DirEntry *dirEntry)
     return buffer;
 }
 
-DirEntry *searchDirectory(Directory *directory, char *name)
+DirEntry *seekDirectory(Directory *directory, char *name)
 {
 
     int arraySize = MAXDIRENTRIES;
@@ -225,7 +218,7 @@ DirEntry *searchDirectory(Directory *directory, char *name)
     return NULL;
 }
 
-DirEntry *searchDirectoryByBlock(Directory *directory, FreeSpaceManager *blockInfo)
+DirEntry *seekDirectoryByBlock(Directory *directory, FreeSpaceManager *blockInfo)
 {
 
     int arraySize = MAXDIRENTRIES;

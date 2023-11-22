@@ -40,14 +40,14 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp)
     return NULL;
 }
 
-void *getObjectFromPath(const char *path){
+void *getObjPath(const char *path){
     char *nameBuffer = malloc(sizeof(char)*NAMESIZE);
     Directory *parent = parsePath(path,nameBuffer);
     if(parent == NULL){
         free(nameBuffer);
         return NULL;
     }
-    DirEntry *entry = searchDirectory(parent,nameBuffer);
+    DirEntry *entry = seekDirectory(parent,nameBuffer);
     free(nameBuffer);
     if(entry == NULL){
         freeDirectoryPtr(parent);
@@ -62,7 +62,7 @@ void *getObjectFromPath(const char *path){
 
 }
 
-int str_rev(char *oldString, char *newStringBuffer)
+int replaceString(char *oldString, char *newStringBuffer)
 {
     int backwardJ = strnlen(oldString, MAXSTRINGLENGTH) - 1;
     int forwardI = 0;
@@ -82,7 +82,7 @@ int strRemoveLastElement(char *oldString, char *newStringBuffer)
     char *intermediateStringBuffer = malloc(sizeof(char) * strnlen(oldString, MAXSTRINGLENGTH));
     char *temp = oldString;
 
-    str_rev(oldString, intermediateStringBuffer);
+    replaceString(oldString, intermediateStringBuffer);
 
     strtok(intermediateStringBuffer, delim);
 
@@ -106,8 +106,8 @@ int strRemoveLastElement(char *oldString, char *newStringBuffer)
     }
 
     char *temp2 = malloc(sizeof(char) * strnlen(intermediateStringBuffer, MAXSTRINGLENGTH));
-    str_rev(intermediateStringBuffer, temp2);
-    int length = str_rev(temp2, newStringBuffer);
+    replaceString(intermediateStringBuffer, temp2);
+    int length = replaceString(temp2, newStringBuffer);
 
     free(intermediateStringBuffer);
     free(temp2);
@@ -147,7 +147,7 @@ int fs_rmdir(const char *pathname)
         free(nameBuffer);
         return -1;
     }
-    DirEntry *entries = searchDirectory(folder, nameBuffer);
+    DirEntry *entries = seekDirectory(folder, nameBuffer);
     free(nameBuffer);
 
     if (entries == NULL || entries->isDirectory == 0)
@@ -228,7 +228,7 @@ Directory *parsePath(const char *path, char *nameBuffer)
     // Traverse through the DirEntry array to find the last component of the path
     for (int i = 1; i < counter; i++)
     {
-        tempEntry = searchDirectory(tempDir, arguments[i]);
+        tempEntry = seekDirectory(tempDir, arguments[i]);
         if (tempEntry != NULL && tempEntry->isDirectory == 1)
         {
             // Update tempDir to the found subdirectory
@@ -272,7 +272,7 @@ DirEntry *getEntryFromPath(const char *path)
     }
 
     // Search for the DirEntry in the parent Directory
-    DirEntry *retObject = searchDirectory(parent, nameBuffer);
+    DirEntry *retObject = seekDirectory(parent, nameBuffer);
 
     // Free the nameBuffer as it's no longer needed
     free(nameBuffer);
@@ -304,7 +304,7 @@ int fs_mkdir(char *pathname, mode_t mode)
         printf("Path is not valid\n try again!");
         retValue = -1;
     }
-    else if (searchDirectory(parentDir, nameBuffer) != NULL)
+    else if (seekDirectory(parentDir, nameBuffer) != NULL)
     {
         printf("That name is in use, change it please!");
         retValue = -1;
@@ -371,7 +371,7 @@ fdDir *fs_opendir(char *pathname)
       Directory *dir = NULL;
     if (strncmp(pathname, "/", 2) != 0)
     {
-        dir = (Directory *)getObjectFromPath(pathname);
+        dir = (Directory *)getObjPath(pathname);
         if (dir == NULL)
         {
             printf("Failed to open directory\n");
@@ -486,7 +486,7 @@ int fs_delete(char *pathname)
         return -1;
     }
 
-    DirEntry *entry = searchDirectory(parentDir, nameBuffer);
+    DirEntry *entry = seekDirectory(parentDir, nameBuffer);
     free(nameBuffer);
 
     if (entry == NULL || entry->isDirectory == 1)
@@ -554,7 +554,7 @@ int fs_setcwd(char *buf){
         return setCWD(getRootDirectory());
     }
 
-    Directory *newCWD = getObjectFromPath(buf);
+    Directory *newCWD = getObjPath(buf);
     if (newCWD == NULL)
     {
         printf("Not such a file\n");
@@ -621,7 +621,7 @@ int fs_setcwd(char *buf){
     }
 
     // Find the directory entry in the parent directory
-    DirEntry *dirEntry = searchDirectory(parent, nameBuffer);
+    DirEntry *dirEntry = seekDirectory(parent, nameBuffer);
 
     // Check if the directory entry doesn't exist
     if (dirEntry == NULL)

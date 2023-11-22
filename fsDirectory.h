@@ -94,15 +94,14 @@ uint64_t writeDirectory(Directory *directory);
 
 uint64_t writeDEntry(FreeSpaceManager *dirEntry, void *buffer);
 
-uint64_t writePartialDirectoryEntry(FreeSpaceManager *dirEntry, void *buffer, int blockOffset, int blockCount);
 
 uint64_t readPartialDirEntry(FreeSpaceManager *dirEntry, int blockOffset, int blockCount, void *buffer, int bufferIndex);
 
 void *readDEntry(DirEntry *dirEntry);
 
-DirEntry *searchDirectory(Directory *directory, char *name);
+DirEntry *seekDirectory(Directory *directory, char *name);
 
-DirEntry *searchDirectoryByBlock(Directory *directory, FreeSpaceManager *blockInfo);
+DirEntry *seekDirectoryByBlock(Directory *directory, FreeSpaceManager *blockInfo);
 
 int freeDirectoryPtr(Directory *dir);
 
