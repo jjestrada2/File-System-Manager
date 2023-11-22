@@ -84,12 +84,6 @@ FreeSpaceManager *getAvailableBytes(int bytes)
     return getFreeBlocks(requestedBlocks);
 }
 
-int defragmentFreeSpace()
-{
-    printf("Reached unimplemented function defragmentFreeSpace. Infinite loop imminent. Exiting before crash.");
-    exit(-1);
-    // return 0;
-}
 
 FreeSpaceManager *copyFreeSpaceManager(FreeSpaceManager *oldFSM)
 {
@@ -142,7 +136,7 @@ FreeSpaceManager *getFreeBlocks(int blocks)
        
         if (((FreeSpaceManager *)blockIterator)->size < blocks)
         {
-            defragmentFreeSpace();
+            
             return getFreeBlocks(blocks);
         }
 
