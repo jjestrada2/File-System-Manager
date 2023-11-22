@@ -42,16 +42,16 @@
 
 /****   SET THESE TO 1 WHEN READY TO TEST THAT COMMAND ****/
 #define CMDLS_ON	1
-#define CMDCP_ON	0
+#define CMDCP_ON	1
 #define CMDMV_ON	0
 #define CMDMD_ON	1
 #define CMDRM_ON	1
-#define CMDCP2L_ON	0
-#define CMDCP2FS_ON	0
+#define CMDCP2L_ON	1
+#define CMDCP2FS_ON	1
 #define CMDCD_ON	1
 #define CMDPWD_ON	1
 #define CMDTOUCH_ON	1
-#define CMDCAT_ON	0
+#define CMDCAT_ON	1
 
 
 typedef struct dispatch_t
@@ -97,6 +97,7 @@ static int dispatchcount = sizeof (dispatchTable) / sizeof (dispatch_t);
 // Display files for use by ls command
 int displayFiles (fdDir * dirp, int flall, int fllong)
 	{
+		
 #if (CMDLS_ON == 1)				
 	if (dirp == NULL)	//get out if error
 		return (-1);
@@ -112,6 +113,7 @@ int displayFiles (fdDir * dirp, int flall, int fllong)
 			{
 			if (fllong)
 				{
+				printf("I am in displayfiles function\n");
 				fs_stat (di->d_name, &statbuf);
 				printf ("%s    %9ld   %s\n", fs_isDir(di->d_name)?"D":"-", statbuf.st_size, di->d_name);
 				}
@@ -814,6 +816,12 @@ int main (int argc, char * argv[])
         printf ("| cp2l                 |    OFF   |\n");
 #endif
         printf ("|---------------------------------|\n");
+
+
+		///////////Test Functions//////////
+		
+
+		///////////////////////////////////
 
 	
 	while (1)

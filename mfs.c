@@ -40,6 +40,82 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp)
     return NULL;
 }
 
+void *getObjectFromPath(const char *path){
+    char *nameBuffer = malloc(sizeof(char)*NAMESIZE);
+    Directory *parent = parsePath(path,nameBuffer);
+    if(parent == NULL){
+        free(nameBuffer);
+        return NULL;
+    }
+    DirEntry *entry = searchDirectory(parent,nameBuffer);
+    free(nameBuffer);
+    if(entry == NULL){
+        freeDirectoryPtr(parent);
+        return NULL;
+    }
+
+    void *retObject = readDEntry(entry);
+    
+    freeDirectoryPtr(parent);
+    return retObject;
+
+
+}
+
+int str_rev(char *oldString, char *newStringBuffer)
+{
+    int backwardJ = strnlen(oldString, MAXSTRINGLENGTH) - 1;
+    int forwardI = 0;
+
+    while (backwardJ >= 0)
+    {
+        newStringBuffer[forwardI++] = oldString[backwardJ--];
+    }
+    newStringBuffer[forwardI] = '\0';
+
+    return forwardI;
+}
+
+int strRemoveLastElement(char *oldString, char *newStringBuffer)
+{
+    char *delim = "/";
+    char *intermediateStringBuffer = malloc(sizeof(char) * strnlen(oldString, MAXSTRINGLENGTH));
+    char *temp = oldString;
+
+    str_rev(oldString, intermediateStringBuffer);
+
+    strtok(intermediateStringBuffer, delim);
+
+    int rmTok = strlen(intermediateStringBuffer) + 1;
+
+    char *rootCheck = strtok(NULL, delim);
+
+    if (rootCheck == NULL)
+    {
+        strncpy(intermediateStringBuffer, "/", 2);
+    }
+    else
+    {
+
+        for (int i = 0; i < rmTok; i++)
+        {
+            intermediateStringBuffer[i] = '\0';
+        }
+
+        strncat(intermediateStringBuffer, oldString, strlen(oldString) - rmTok);
+    }
+
+    char *temp2 = malloc(sizeof(char) * strnlen(intermediateStringBuffer, MAXSTRINGLENGTH));
+    str_rev(intermediateStringBuffer, temp2);
+    int length = str_rev(temp2, newStringBuffer);
+
+    free(intermediateStringBuffer);
+    free(temp2);
+
+    return length;
+}
+
+
 int fs_stat(const char *pathname, struct fs_stat *buf)
 {
     DirEntry *entry = getEntryFromPath(pathname);
@@ -288,10 +364,46 @@ int fs_isFile(char *path)
 
     // Return the determined value (1 if file, 0 otherwise)
     return retValue;
-}
+} 
 
 fdDir *fs_opendir(char *pathname)
 {
+      Directory *dir = NULL;
+    if (strncmp(pathname, "/", 2) != 0)
+    {
+        dir = (Directory *)getObjectFromPath(pathname);
+        if (dir == NULL)
+        {
+            printf("Failed to open directory\n");
+            return NULL;
+        }
+    }
+    else
+    {
+        dir = getRootDirectory();
+    }
+
+    fdDir *returnDirInfo = malloc(sizeof(fdDir));
+    struct fs_diriteminfo **itemArray = malloc(sizeof(struct fs_diriteminfo *) * MAXDIRENTRIES);
+    returnDirInfo->dirItemArray = itemArray;
+    int i = 0;
+    while (i < MAXDIRENTRIES && dir->dirArray[i].isUse == 0)
+    {
+        struct fs_diriteminfo *dirInfo = malloc(sizeof(struct fs_diriteminfo));
+        strncpy(dirInfo->d_name, dir->dirArray[i].fileName, NAMESIZE);
+        dirInfo->d_reclen = dir->dirArray[i].dirEntBlockInfo.size * getSizeofBlocks();
+        dirInfo->fileType = dir->dirArray[i].isDirectory;
+        returnDirInfo->dirItemArray[i] = dirInfo;
+        i++;
+    }
+    returnDirInfo->d_reclen = i;
+    returnDirInfo->dirEntryPosition = 0;
+    returnDirInfo->directoryStartLocation = dir->dirArray[0].dirEntBlockInfo.currentBlock;
+
+    setCWD(dir);
+    return returnDirInfo;
+
+    /*
     // Check if the given pathname is a directory
     if (!fs_isDir(pathname))
     {
@@ -308,7 +420,7 @@ fdDir *fs_opendir(char *pathname)
     if (parent == NULL)
     {
         return NULL;
-    }
+    }*/
 }
 
 int fs_closedir(fdDir *dirp)
@@ -318,15 +430,18 @@ int fs_closedir(fdDir *dirp)
     {
         return -1; // Invalid argument.
     }
-    // Free the dirp structure itself.
+   for (int i = 0; i < dirp->d_reclen; i++)
+    {
+        free(dirp->dirItemArray[i]);
+    }
+    free(dirp->dirItemArray);
     free(dirp);
-    return 0; // Success.
+    return 0;
 }
 
 char *fs_getcwd(char *pathname, size_t size)
-{
-    char *cwd = getcwd(pathname, size);
-    return cwd;
+{               
+    return getCWDPath();
 }
 
 // Helper function for fs_delete()
@@ -360,8 +475,33 @@ int removeEntryFromDirectory(Directory *dir, DirEntry *entryToRemove)
         return -1; // Entry not found in the directory.
     }
 }
-int fs_delete(char *filename)
-{
+int fs_delete(char *pathname)
+{ 
+    char *nameBuffer = malloc(sizeof(char) * NAMESIZE);
+    Directory *parentDir = parsePath(pathname, nameBuffer);
+    if (parentDir == NULL)
+    {
+        printf("Path is invalid\n");
+        free(nameBuffer);
+        return -1;
+    }
+
+    DirEntry *entry = searchDirectory(parentDir, nameBuffer);
+    free(nameBuffer);
+
+    if (entry == NULL || entry->isDirectory == 1)
+    {
+        printf("A File with that name does not exist\n");
+        freeDirectoryPtr(parentDir);
+        return -1;
+    }
+    deleteDEntry(entry);
+
+    unassignDEntry(entry);
+    writeDirectory(parentDir);
+    freeDirectoryPtr(parentDir);
+    return 0;
+    /*
     // Step 1: Get the DirEntry associated with the specified filename
     DirEntry *entryToDelete = getEntryFromPath(filename);
 
@@ -398,12 +538,77 @@ int fs_delete(char *filename)
         freeDirectoryPtr(parentDir);
         return -1;
     }
+    */
 }
 
 
-int fs_setcwd(char *pathname)
-{
+int fs_setcwd(char *buf){
+     if (strncmp(buf, ".", 2) == 0)
+    {
+        return 0;
+    }
+
+    if (strncmp(buf, "/", 2) == 0)
+    {
+        setCWDPath("/");
+        return setCWD(getRootDirectory());
+    }
+
+    Directory *newCWD = getObjectFromPath(buf);
+    if (newCWD == NULL)
+    {
+        printf("Not such a file\n");
+        return -1;
+    }
+
+    int setRet = setCWD(newCWD);
+    if (setRet == 0)
+    {
+        if (strncmp(buf, "/", 1) != 0)
+        {
+            char *newCWDPath = malloc(sizeof(char) * MAXSTRINGLENGTH);
+            int offset = 0;
+            strncpy(newCWDPath, getCWDPath(), MAXSTRINGLENGTH);
+            while (strncmp(buf + offset, "../", 3) == 0)
+            {
+                strRemoveLastElement(newCWDPath, newCWDPath);
+                offset += 3;
+            }
+            if (strncmp(buf + offset, "..", 3) == 0)
+            {
+                strRemoveLastElement(newCWDPath, newCWDPath);
+                setCWDPath(newCWDPath);
+            }
+            else
+            {
+                if (strncmp(getCWDPath(), "/", 1) != 0 || strlen(getCWDPath()) != 1)
+                {
+
+                    strcat(newCWDPath, "/");
+                }
+                setCWDPath(strncat(newCWDPath, buf + offset, DIRMAX_LEN));
+            }
+            free(newCWDPath);
+        }
+        else
+        {
+            setCWDPath(buf);
+            printf("%s is now the new cwd\n", buf);
+        }
+    }
+    else
+    {
+        printf("Failed to change current working directory\n");
+        setRet = -1;
+    }
+
+    return setRet;
+}
+
+
+
     
+/*
     // Parse the path and get the parent directory
     char nameBuffer[NAMESIZE];
     Directory *parent = parsePath(pathname, nameBuffer);
@@ -452,6 +657,6 @@ int fs_setcwd(char *pathname)
     // Free allocated resources
     freeDirectoryPtr(parent);
 
-    return result;
-}
+    return result;*/
+
 

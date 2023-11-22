@@ -101,6 +101,7 @@ b_io_fd b_open (char * filename, int flags)
 	DirEntry* entry = searchDirectory(parentDir,nameBuffer);
 	if (entry == NULL){
 		if(flags & O_CREAT){
+			//check if file name is already taken
 			entry = createDEntry(nameBuffer,DEFAULTFILESIZE,0);
 			assignDEntryToDirectory(entry,parentDir);
 			char* buffer = malloc(entry->dirEntBlockInfo.size);
@@ -143,7 +144,10 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		return (-1); 					//invalid file descriptor
 		}
 		
-		
+		if(getBlockOffset(offset + whence) > fcbArray[fd].fileInfo->size){
+			return -1;
+		}
+		fcbArray[fd].fileOffset = offset + whence;
 	return (0); //Change this
 	}
 
@@ -159,9 +163,17 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		{
 		return (-1); 					//invalid file descriptor
 		}
+	
+	if(fcbArray[fd].buf == NULL){
+		printf("-----FAILED-TO-WRITE-BUFFER-%i-FILE-DESC-IS-INVALID-----\n",fd);
+		return -1;
+	}
+
+	int blocksWritten = writePartialDirectoryEntry(fcbArray[fd].fileInfo, buffer, getBlockOffset(fcbArray[fd].fileOffset),count);
+
 		
-		
-	return (0); //Change this
+	return blocksWritten; 
+
 	}
 
 
@@ -196,7 +208,54 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		return (-1); 					//invalid file descriptor
 		}
 		
-	return (0);	//Change this
+	if(fcbArray[fd].buf == NULL){
+		printf("-----FAILED-TO-READ-BUFFER-%i-FILE-DESC-IS-INVALID-----\n",fd);
+		return -1;
+	}
+	int bytesReturned = 0;
+	int fileRemaining = fcbArray[fd].fileInfo->size - fcbArray[fd].fileOffset;
+	int initialBytes = (fileRemaining > count) ? count : fileRemaining;
+	if(initialBytes >= fcbArray[fd].buflen && fcbArray[fd].buflen!= 0){
+		memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].index,fcbArray[fd].buflen);
+		bytesReturned = fcbArray[fd].buflen;
+		fcbArray[fd].fileOffset += bytesReturned;
+		fcbArray[fd].index = B_CHUNK_SIZE;
+		fcbArray[fd].buflen = 0;
+		fileRemaining = fcbArray[fd].fileInfo->size - fcbArray[fd].fileOffset;
+	}
+	int blockOffset = getBlockOffset(fcbArray[fd].fileOffset);
+	int remainingBytes = count -bytesReturned;
+	int remainingFullBlocks = ((fileRemaining > remainingBytes) ? remainingBytes : fileRemaining)/B_CHUNK_SIZE;
+	
+	//second step
+	if(remainingFullBlocks){
+		readPartialDirEntry(fcbArray[fd].fileInfo, blockOffset, remainingFullBlocks, buffer, bytesReturned);
+		bytesReturned += B_CHUNK_SIZE * remainingFullBlocks;
+		fcbArray[fd].fileOffset += B_CHUNK_SIZE * remainingFullBlocks;
+
+		remainingBytes = count - bytesReturned;
+		fileRemaining =fcbArray[fd].fileInfo->size - fcbArray[fd].fileOffset;
+		blockOffset += remainingFullBlocks;
+	}
+
+	//Third Step
+	if(remainingBytes && fileRemaining){
+		if(fcbArray[fd].index == B_CHUNK_SIZE){
+			readPartialDirEntry(fcbArray[fd].fileInfo,blockOffset,1,fcbArray[fd].buf,0);
+			fcbArray[fd].index = 0;
+			fcbArray[fd].buflen = B_CHUNK_SIZE;
+		}
+
+		int lastBytes = (fileRemaining > remainingBytes) ? remainingBytes : fileRemaining;
+		memcpy(buffer + bytesReturned, fcbArray[fd].buf + fcbArray[fd].index, lastBytes);
+
+		bytesReturned += lastBytes;
+		fcbArray[fd].fileOffset +=lastBytes;
+		fcbArray[fd].index += lastBytes;
+		fcbArray[fd].buflen = fcbArray[fd].buflen - lastBytes;
+	}
+
+	return bytesReturned;	
 	}
 	
 // Interface to Close the file	
