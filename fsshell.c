@@ -43,7 +43,7 @@
 /****   SET THESE TO 1 WHEN READY TO TEST THAT COMMAND ****/
 #define CMDLS_ON	1
 #define CMDCP_ON	1
-#define CMDMV_ON	0
+#define CMDMV_ON	1
 #define CMDMD_ON	1
 #define CMDRM_ON	1
 #define CMDCP2L_ON	1
@@ -368,9 +368,22 @@ int cmd_cp (int argcnt, char *argvec[])
 ****************************************************/
 int cmd_mv (int argcnt, char *argvec[])
 	{
-#if (CMDMV_ON == 1)				
-	return -99;
-	// **** TODO ****  For you to implement	
+#if (CMDMV_ON == 1)
+	if (argcnt != 3) {
+		printf("Usage: mv srcfile destfile\n");
+		return -1;
+	}
+
+	char* src = argvec[1];
+
+	if (fs_isDir(src)) {
+		printf("Can only move files not directories.");
+		return -1;
+	}
+
+	cmd_cp(argcnt, argvec);
+	fs_delete(src);
+
 #endif
 	return 0;
 	}
