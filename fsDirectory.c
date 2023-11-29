@@ -31,7 +31,7 @@ Directory *rootDirectory;
 Directory *cwd;
 char cwdPath[DIRMAX_LEN];
 
-//DirEntry *initDirEntryArrayBlock(DirEntry *dirEntryArray); //init directory entries
+
 
 DirEntry *initDirEntryArrayBlock(DirEntry *dirEntryArray)
 {
@@ -46,9 +46,9 @@ DirEntry *initDirEntryArrayBlock(DirEntry *dirEntryArray)
 
 DirEntry *createDEntry(char *name, int size, unsigned char isDir)
 {
-    printf("-------------------------Directory Entry Initialization HUMAN OS-------------------------\n");
+    
     DirEntry *retDirEnt = malloc(sizeof(DirEntry));
-    FreeSpaceManager *dirEntFSM = getAvailableBytes(size);///////////////////////////////////////**************
+    FreeSpaceManager *dirEntFSM = getAvailableBytes(size);
     memcpy(retDirEnt, dirEntFSM, sizeof(FreeSpaceManager));
     free(dirEntFSM);
     strncpy(retDirEnt->fileName, name, NAMESIZE);
@@ -57,20 +57,20 @@ DirEntry *createDEntry(char *name, int size, unsigned char isDir)
     retDirEnt->modificationTime = time(NULL);
     retDirEnt->isDirectory = isDir;
     retDirEnt->isUse = 0;
-    printf("-------------------------Directory Entry Initialization Finished HUMAN OS-------------------------\n");
+   
     return retDirEnt;
 }
 
 Directory *createDirectory(DirEntry *dirEnt, Directory *parent)
 {
-    printf("-------------------------Directory Initialization HUMAN OS-------------------------\n");
+    
     Directory *newDir = malloc(sizeof(Directory));
     memcpy(&(newDir->dirArray[0]), dirEnt, sizeof(DirEntry));
     memcpy(&(newDir->dirArray[1]), parent, sizeof(DirEntry));
     strcpy(newDir->dirArray[0].fileName, ".");
     strcpy(newDir->dirArray[1].fileName, "..");
     initDirEntryArrayBlock(newDir->dirArray);
-    printf("-------------------------Directory Initialization Finished HUMAN OS-------------------------\n");
+   
 
     return newDir;
 }
@@ -85,7 +85,7 @@ int assignDEntryToDirectory(DirEntry *dirEnt, Directory *parent)
             return 0;
         }
     }
-    printf("Failed to add Directory Entry: No space available.\n");
+    printf("Failed to add Directory Entry\n");
     return 1;
 }
 
@@ -149,7 +149,7 @@ int initRootDirectory()
     FreeSpaceManager *possibleRoot = getRootLocation();
     if (possibleRoot->currentBlock == ROOTUNINITIALIZEDFLAG)
     {
-        printf("-------------------------Root Directory Initialization HUMAN OS-------------------------\n");
+
         DirEntry *rootDirEnt = createDEntry("root", sizeof(Directory), 1);
         Directory *rootDirect = createDirectory(rootDirEnt, (Directory *)rootDirEnt);
         free(rootDirEnt);
@@ -158,7 +158,7 @@ int initRootDirectory()
         rootDirectory = rootDirect;
         setCWD(rootDirect);
 
-        printf("-------------------------Root Directory Initialization Finished HUMAN OS-------------------------\n");
+       
     }
     else
     {

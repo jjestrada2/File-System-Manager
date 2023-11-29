@@ -60,7 +60,7 @@ int initVolumeCB(uint64_t numberOfBlocks, uint64_t blockSize)
     vcb = (volumeCB *)malloc(blockSize); 
     LBAread(vcb, 1, 0);
 
-    if (strcmp(vcb->header, "HUMANVolumeCB") != 0)
+    if (strcmp(vcb->header, "HUMAN--VolumeCB") != 0)
     {
         printf("Creating VCB in Block 1\n");
         stpcpy(vcb->header, "HUMANVolumeCB");
