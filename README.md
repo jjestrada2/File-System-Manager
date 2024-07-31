@@ -45,7 +45,7 @@ This project is a C-based file system manager that implements a basic file syste
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/jjestrada2/FileSystem.git
+   git clone https://github.com/jjestrada2/File-System-Manager.git
    cd FileSystem
 2. ```bash
    make
